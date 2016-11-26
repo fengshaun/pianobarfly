@@ -396,6 +396,7 @@ static void BarMainLoop (BarApp_t *app) {
 		}
 
 		BarMainHandleUserInput (app);
+		app->player.fly.loved = app->playlist->rating == 1 ? true : false;
 
 		/* show time */
 		if (app->player.mode < PLAYER_FINISHED_PLAYBACK) {

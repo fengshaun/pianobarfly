@@ -85,6 +85,11 @@ typedef struct BarFly {
 	 * set to true from the start.
 	 */
 	bool completed;
+
+	/**
+	 * Whether the song is loved
+	 */
+	bool loved;
 	
 	/**
 	 * The song's artist.

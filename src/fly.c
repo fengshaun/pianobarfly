@@ -290,7 +290,7 @@ static int _BarFlyFileDelete(BarFly_t const* fly,
 		/*
 		 * Delete the file.
 		 */
-		BarUiMsg(settings, MSG_INFO, "Deleting partially recorded file (%s).\n",
+		BarUiMsg(settings, MSG_INFO, "Deleting partial or unloved recorded file (%s).\n",
 				fly->audio_file_path);
 		status = unlink(fly->audio_file_path);
 		if (status != 0) {
@@ -1138,9 +1138,9 @@ int BarFlyClose(BarFly_t* fly, BarSettings_t const* settings)
 		}
 
 		/*
-		 * Delete the file if it was not complete.
+		 * Delete the file if it was not complete or not loved.
 		 */
-		if (!fly->completed) {
+		if (!fly->completed || (settings->downloadOnlyLoved && !fly->loved)) {
 			fly->status = DELETING;
 			status = _BarFlyFileDelete(fly, settings);
 			if (status != 0) {
@@ -1292,6 +1292,7 @@ int BarFlyOpen(BarFly_t* fly, PianoSong_t const* song,
 	memset(&output_fly, 0, sizeof(BarFly_t));
 	output_fly.audio_file = NULL;
 	output_fly.completed = false;
+	output_fly.loved = false;
 	output_fly.status = NOT_RECORDING;
 
 	/*
@@ -1306,6 +1307,7 @@ int BarFlyOpen(BarFly_t* fly, PianoSong_t const* song,
 	output_fly.audio_format = song->audioFormat;
 	strncpy(output_fly.stationName, fly->stationName, strlen(fly->stationName) + 1);
 	output_fly.stationName[BAR_FLY_NAME_LENGTH - 1] = '\0';
+	output_fly.loved = song->rating == 1 ? true : false;
 
 	output_fly.cover_art_url = strdup(song->coverArt);
 	if (output_fly.cover_art_url == NULL) {
@@ -1415,7 +1417,7 @@ char const* BarFlyStatusGet(BarFly_t* fly)
 			break;
 
 		case (DELETING):
-			string = "Deleting (partial file)";
+			string = "Deleting";
 			break;
 
 		case (TAGGING):
@@ -1469,6 +1471,10 @@ int BarFlyWrite(BarFly_t* fly, void const* data, size_t data_size)
 	 * Write the given data buffer to the audio file.
 	 */
 	if (!fly->completed) {
+		if (data_size == 0) {
+			goto end;
+		}
+
 		assert(fly->audio_file != NULL);
 		status = fwrite(data, data_size, 1, fly->audio_file);
 		if (status != 1) {

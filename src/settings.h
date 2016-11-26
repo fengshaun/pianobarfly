@@ -85,6 +85,7 @@ typedef struct {
 
 typedef struct {
 	bool autoselect;
+	bool downloadOnlyLoved;
 	unsigned int history, maxPlayerErrors;
 	int volume;
 	BarStationSorting_t sortOrder;

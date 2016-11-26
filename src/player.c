@@ -102,6 +102,13 @@ static inline signed short int applyReplayGain (const signed short int value,
  */
 static inline int BarPlayerBufferFill (struct audioPlayer *player,
 		const char *data, const size_t dataSize) {
+	/* dataSize is 0 at the beginning of the song, but everything
+	 * works anyway
+	 */
+	if (dataSize == 0) {
+		return 1;
+	}
+
 	/* fill buffer */
 	if (player->bufferFilled + dataSize > BAR_PLAYER_BUFSIZE) {
 		BarUiMsg (player->settings, MSG_ERR, "Buffer overflow!\n");

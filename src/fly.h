@@ -52,6 +52,7 @@ typedef enum BarFlyStatus {
 	NOT_RECORDING_EXIST,
 	RECORDING,
 	DELETING,
+	COPYING,
 	TAGGING
 } BarFlyStatus_t;
 
@@ -63,9 +64,14 @@ typedef enum BarFlyStatus {
  */
 typedef struct BarFly {
 	/**
-	 * The stream to which the audio stream is written.
+	 * The file to which the final audio stream is copied.
 	 */
 	FILE* audio_file;
+
+	/**
+	 * The stream to which audio is written.
+	 */
+	FILE* temp_file;
 
 	/**
 	 * The audio file path.
@@ -211,5 +217,14 @@ int BarFlyTag(BarFly_t* fly, BarSettings_t const* settings);
  * will be returned, otherwise -1 is returned.
  */
 int BarFlyWrite(BarFly_t* fly, void const* data, size_t data_size);
+
+/**
+ * Copies the temporary audio file to final destination
+ *
+ * @param fly Pointer to a BarFly_t structure.
+ * @param settings Pointer to the application settings structure.
+ * @return Upon success 0 is returned otherwise -1 is returned.
+ */
+int BarFlyCopyCompleted(BarFly_t* fly, BarSettings_t const* settings);
 
 #endif /* _FLY_H */

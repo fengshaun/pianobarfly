@@ -1122,45 +1122,78 @@ void BarFlyFinalize(void)
 	return;
 }
 
+int BarFlyCopyCompleted(BarFly_t* fly, BarSettings_t const* settings)
+{
+	if (!fly) {
+		return 0;
+	}
+
+	fly->status = COPYING;
+	fseek(fly->temp_file, 0, SEEK_SET);
+
+	/*
+	 * Open a stream to the file.
+	 */
+	int status = _BarFlyFileOpen(&fly->audio_file, fly->audio_file_path, settings);
+
+	if (status == 0) {
+		char buf[BAR_FLY_COPY_BLOCK_SIZE];
+		memset(buf, 0, BAR_FLY_COPY_BLOCK_SIZE);
+		size_t s = 0, s2 = 0;
+
+		while (!feof(fly->temp_file)) {
+			s = fread(buf, 1, BAR_FLY_COPY_BLOCK_SIZE, fly->temp_file);
+
+			if (s != BAR_FLY_COPY_BLOCK_SIZE && !feof(fly->temp_file)) {
+				BarUiMsg(settings, MSG_INFO,
+						"Could not read temporary file (%d): %s\n",
+						errno,
+						strerror(errno));
+				break;
+			}
+
+			s2 = fwrite(buf, 1, s, fly->audio_file);
+
+			if (s2 != s) {
+				BarUiMsg(settings, MSG_INFO,
+						"Could not write audio to destination %s (%d): %s\n",
+						fly->audio_file_path,
+						errno,
+						strerror(errno));
+				break;
+			}
+		}
+	}
+
+	fclose(fly->audio_file);
+}
+
 int BarFlyClose(BarFly_t* fly, BarSettings_t const* settings)
 {
-	int exit_status = 0;
-	int status;
+	if (!fly) {
+		return 0;
+	}
 
 	assert(settings != NULL);
 
-	if (fly != NULL) {
-		/*
-		 * Close the file stream.
-		 */
-		if (fly->audio_file != NULL) {
-			fclose(fly->audio_file);
-		}
+	int exit_status = 0;
+	int status;
 
-		/*
-		 * Delete the file if it was not complete or not loved.
-		 */
-		if (!fly->completed || (settings->downloadOnlyLoved && !fly->loved)) {
-			fly->status = DELETING;
-			status = _BarFlyFileDelete(fly, settings);
-			if (status != 0) {
-				exit_status = -1;
-			}
-		}
+	/* closing the tmpfile() will delete it automatically */
+	fclose(fly->temp_file);
 
-		/*
-		 * Free the audio file name.
-		 */
-		if (fly->audio_file_path != NULL) {
-			free(fly->audio_file_path);
-		}
+	/*
+	 * Free the audio file name.
+	 */
+	if (fly->audio_file_path != NULL) {
+		free(fly->audio_file_path);
+	}
 
-		/*
-		 * Free the cover art URL.
-		 */
-		if (fly->cover_art_url != NULL) {
-			free(fly->cover_art_url);
-		}
+	/*
+	 * Free the cover art URL.
+	 */
+	if (fly->cover_art_url != NULL) {
+		free(fly->cover_art_url);
 	}
 
 	return exit_status;
@@ -1347,21 +1380,16 @@ int BarFlyOpen(BarFly_t* fly, PianoSong_t const* song,
 	if (output_fly.audio_file_path == NULL) {
 		goto error;
 	}
-	
+
 	/*
-	 * Open a stream to the file.
+	 * Get a temporary file for download.
 	 */
-	status = _BarFlyFileOpen(&output_fly.audio_file,
-			output_fly.audio_file_path, settings);
-	if (status == 0) {
-		output_fly.status = RECORDING;
-	} else if (status == -2) {
-		output_fly.status = NOT_RECORDING_EXIST;
-		output_fly.completed = true;
-	} else {
-		output_fly.completed = true;
+	output_fly.temp_file = tmpfile();
+	if (output_fly.temp_file == NULL) {
 		goto error;
 	}
+
+	output_fly.status = RECORDING;
 
 	/*
 	 * All members of the BarFly_t structure were created successfully.  Copy
@@ -1420,6 +1448,10 @@ char const* BarFlyStatusGet(BarFly_t* fly)
 			string = "Deleting";
 			break;
 
+		case (COPYING):
+			string = "Copying";
+			break;
+
 		case (TAGGING):
 			string = "Tagging";
 			break;
@@ -1476,7 +1508,7 @@ int BarFlyWrite(BarFly_t* fly, void const* data, size_t data_size)
 		}
 
 		assert(fly->audio_file != NULL);
-		status = fwrite(data, data_size, 1, fly->audio_file);
+		status = fwrite(data, data_size, 1, fly->temp_file);
 		if (status != 1) {
 			goto error;
 		}

@@ -518,8 +518,15 @@ void *BarPlayerThread (void *data) {
 	} while (wRet == WAITRESS_RET_PARTIAL_FILE || wRet == WAITRESS_RET_TIMEOUT
 			|| wRet == WAITRESS_RET_READ_ERR);
 
-	/* If the song was played all the way through tag it. */
 	if (wRet == WAITRESS_RET_OK) {
+		if (!player->settings->downloadOnlyLoved ||
+			(player->settings->downloadOnlyLoved && !player->fly.loved)) {
+			BarUiMsg(player->settings, MSG_INFO, "Saving loved song.\n",
+					player->fly.audio_file_path);
+			BarFlyCopyCompleted(&player->fly, player->settings);
+		}
+
+		/* If the song was played all the way through tag it. */
 		BarFlyTag(&player->fly, player->settings);
 	}
 

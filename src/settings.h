@@ -84,6 +84,7 @@ typedef struct {
 } BarMsgFormatStr_t;
 
 typedef struct {
+	bool record;
 	bool autoselect;
 	bool downloadOnlyLoved;
 	unsigned int history, maxPlayerErrors;

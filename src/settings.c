@@ -129,6 +129,7 @@ void BarSettingsRead (BarSettings_t *settings) {
 	settings->audioQuality = PIANO_AQ_HIGH;
 	settings->autoselect = true;
 	settings->downloadOnlyLoved = true;
+	settings->record = true;
 	settings->history = 5;
 	settings->volume = 0;
 	settings->maxPlayerErrors = 5;
@@ -312,6 +313,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->autoselect = atoi (val);
 			} else if (streq ("download_only_loved", key)) {
 				settings->downloadOnlyLoved = atoi (val);
+			} else if (streq ("record", key)) {
+				settings->record = atoi (val);
 			} else if (streq ("tls_fingerprint", key)) {
 				/* expects 40 byte hex-encoded sha1 */
 				if (strlen (val) == 40) {

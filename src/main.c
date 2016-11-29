@@ -146,11 +146,11 @@ static bool BarMainGetLoginCredentials (BarSettings_t *settings,
 
 				close (pipeFd[1]);
 				memset (passBuf, 0, sizeof (passBuf));
-				ssize_t len = read (pipeFd[0], passBuf, sizeof (passBuf)-1);
+				status = read (pipeFd[0], passBuf, sizeof (passBuf)-1);
 				close (pipeFd[0]);
 
 				/* drop trailing newlines */
-				len = strlen (passBuf)-1;
+				ssize_t len = strlen (passBuf)-1;
 				while (len >= 0 && passBuf[len] == '\n') {
 					passBuf[len] = '\0';
 					--len;
@@ -256,6 +256,7 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 	} else {
 		/* setup player */
 		memset (&app->player, 0, sizeof (app->player));
+		app->player.record = app->settings.record;
 
 		WaitressInit (&app->player.waith);
 		WaitressSetUrl (&app->player.waith, app->playlist->audioUrl);
@@ -275,7 +276,8 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 		strcpy(app->player.fly.stationName, app->curStation->name);
 
 		/* Open the audio file. */
-		BarFlyOpen (&app->player.fly, app->playlist, &app->settings);
+		if(app->settings.record)
+			BarFlyOpen (&app->player.fly, app->playlist, &app->settings);
 
 		/* throw event */
 		BarUiStartEventCmd (&app->settings, "songstart",
@@ -433,6 +435,19 @@ int main (int argc, char **argv) {
 
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
+
+	/* override settings via cmdline */
+	while ((c = getopt (argc, argv, "rn")) != -1)
+		switch (c) {
+		case 'n':                              /* don't record */
+			app.settings.record = false;
+			break;
+		case 'r':                              /* record */
+			app.settings.record = true;
+			break;
+		default:
+			break;
+		}
 
 	PianoReturn_t pret;
 	if ((pret = PianoInit (&app.ph, app.settings.partnerUser,

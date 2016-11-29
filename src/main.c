@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <getopt.h>
 /* fork () */
 #include <unistd.h>
 #include <sys/select.h>
@@ -321,7 +322,9 @@ static void BarMainPlayerCleanup (BarApp_t *app, pthread_t *playerThread) {
 	}
 
 	/* Close the output file. */
-	BarFlyClose (&app->player.fly, &app->settings);
+	if (app->settings.record) {
+		BarFlyClose (&app->player.fly, &app->settings);
+	}
 
 	memset (&app->player, 0, sizeof (app->player));
 }
@@ -436,18 +439,29 @@ int main (int argc, char **argv) {
 	BarSettingsInit (&app.settings);
 	BarSettingsRead (&app.settings);
 
-	/* override settings via cmdline */
-	while ((c = getopt (argc, argv, "rn")) != -1)
-		switch (c) {
-		case 'n':                              /* don't record */
-			app.settings.record = false;
-			break;
-		case 'r':                              /* record */
-			app.settings.record = true;
-			break;
-		default:
-			break;
-		}
+	/* provide commandline options */
+	static struct option longopts[] = {
+		{ "record",         no_argument, NULL, 'r' },
+		{ "no-record",      no_argument, NULL, 'n'},
+		{ NULL,             0,           NULL, 0 }
+	};
+
+	int ch;
+
+	while ((ch = getopt_long(argc, argv, "rn", longopts, NULL)) != -1) {
+		switch(ch) {
+			case 'r':
+				app.settings.record = true;
+				break;
+
+			case 'n':
+				app.settings.record = false;
+				break;
+
+			default:
+				break;
+	  }
+	}
 
 	PianoReturn_t pret;
 	if ((pret = PianoInit (&app.ph, app.settings.partnerUser,

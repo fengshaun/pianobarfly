@@ -117,7 +117,7 @@ static inline int BarPlayerBufferFill (struct audioPlayer *player,
 
 	/* Write the stream to the output file. */
 	if(player->record) {
-		status = BarFlyWrite(&player->fly, data, dataSize);
+		int status = BarFlyWrite(&player->fly, data, dataSize);
 		if (status != 0) {
 			BarUiMsg (player->settings, MSG_ERR, "Error writing audio file.\n");
 		}

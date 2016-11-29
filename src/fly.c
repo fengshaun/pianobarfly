@@ -1180,19 +1180,21 @@ int BarFlyClose(BarFly_t* fly, BarSettings_t const* settings)
 	int status;
 
 	/* closing the tmpfile() will delete it automatically */
-	fclose(fly->temp_file);
+	if (fly->temp_file) {
+		fclose(fly->temp_file);
+	}
 
 	/*
 	 * Free the audio file name.
 	 */
-	if (fly->audio_file_path != NULL) {
+	if (fly->audio_file_path) {
 		free(fly->audio_file_path);
 	}
 
 	/*
 	 * Free the cover art URL.
 	 */
-	if (fly->cover_art_url != NULL) {
+	if (fly->cover_art_url) {
 		free(fly->cover_art_url);
 	}
 

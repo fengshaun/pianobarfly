@@ -10,3 +10,7 @@ waitress-test
 mp3
 \#*
 TAGS
+GPATH
+GTAGS
+cscope.*
+GRTAGS

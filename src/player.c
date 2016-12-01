@@ -521,7 +521,7 @@ void *BarPlayerThread (void *data) {
 	} while (wRet == WAITRESS_RET_PARTIAL_FILE || wRet == WAITRESS_RET_TIMEOUT
 			|| wRet == WAITRESS_RET_READ_ERR);
 
-	if (wRet == WAITRESS_RET_OK) {
+	if (wRet == WAITRESS_RET_OK && player->settings->record) {
 		if (!player->settings->downloadOnlyLoved ||
 			(player->settings->downloadOnlyLoved && !player->fly.loved)) {
 			BarUiMsg(player->settings, MSG_INFO, "Saving loved song.\n",

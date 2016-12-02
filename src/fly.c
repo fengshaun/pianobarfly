@@ -592,7 +592,8 @@ static FILE* _BarFlyFileOpenStream(char const* path, char const* mode)
 	 * with fopen().
 	 */
 	do {
-		fd = open(path, O_WRONLY | O_CREAT | O_EXCL);
+		fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
+				  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 		if ((fd == -1) && (errno != EINTR)) {
 			goto error;
 		}

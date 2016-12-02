@@ -1126,43 +1126,46 @@ void BarFlyFinalize(void)
 int BarFlyCopyCompleted(BarFly_t* fly, BarSettings_t const* settings)
 {
 	if (!fly) {
-		return 0;
+		return -1;
 	}
-
-	fly->status = COPYING;
-	fseek(fly->temp_file, 0, SEEK_SET);
 
 	/*
 	 * Open a stream to the file.
 	 */
 	int status = _BarFlyFileOpen(&fly->audio_file, fly->audio_file_path, settings);
 
-	if (status == 0) {
-		char buf[BAR_FLY_COPY_BLOCK_SIZE];
-		memset(buf, 0, BAR_FLY_COPY_BLOCK_SIZE);
-		size_t s = 0, s2 = 0;
+	if (status < 0) {
+		return -1;
+	}
 
-		while (!feof(fly->temp_file)) {
-			s = fread(buf, 1, BAR_FLY_COPY_BLOCK_SIZE, fly->temp_file);
+	fly->status = COPYING;
+	fseek(fly->temp_file, 0, SEEK_SET);
 
-			if (s != BAR_FLY_COPY_BLOCK_SIZE && !feof(fly->temp_file)) {
-				BarUiMsg(settings, MSG_INFO,
-						"Could not read temporary file (%d): %s\n",
-						errno,
-						strerror(errno));
-				break;
-			}
 
-			s2 = fwrite(buf, 1, s, fly->audio_file);
+	char buf[BAR_FLY_COPY_BLOCK_SIZE];
+	memset(buf, 0, BAR_FLY_COPY_BLOCK_SIZE);
+	size_t s = 0, s2 = 0;
 
-			if (s2 != s) {
-				BarUiMsg(settings, MSG_INFO,
-						"Could not write audio to destination %s (%d): %s\n",
-						fly->audio_file_path,
-						errno,
-						strerror(errno));
-				break;
-			}
+	while (!feof(fly->temp_file)) {
+		s = fread(buf, 1, BAR_FLY_COPY_BLOCK_SIZE, fly->temp_file);
+
+		if (s != BAR_FLY_COPY_BLOCK_SIZE && !feof(fly->temp_file)) {
+			BarUiMsg(settings, MSG_INFO,
+					"Could not read temporary file (%d): %s\n",
+					errno,
+					strerror(errno));
+			break;
+		}
+
+		s2 = fwrite(buf, 1, s, fly->audio_file);
+
+		if (s2 != s) {
+			BarUiMsg(settings, MSG_INFO,
+					"Could not write audio to destination %s (%d): %s\n",
+					fly->audio_file_path,
+					errno,
+					strerror(errno));
+			break;
 		}
 	}
 

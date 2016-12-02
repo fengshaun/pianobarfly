@@ -254,44 +254,51 @@ static void BarMainStartPlayback (BarApp_t *app, pthread_t *playerThread) {
 
 	if (app->playlist->audioUrl == NULL) {
 		BarUiMsg (&app->settings, MSG_ERR, "Invalid song url.\n");
-	} else {
-		/* setup player */
-		memset (&app->player, 0, sizeof (app->player));
-		app->player.record = app->settings.record;
-
-		WaitressInit (&app->player.waith);
-		WaitressSetUrl (&app->player.waith, app->playlist->audioUrl);
-
-		/* set up global proxy, player is NULLed on songfinish */
-		if (app->settings.proxy != NULL) {
-			WaitressSetProxy (&app->player.waith, app->settings.proxy);
-		}
-
-		app->player.gain = app->playlist->fileGain;
-		app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
-		app->player.audioFormat = app->playlist->audioFormat;
-		app->player.settings = &app->settings;
-		app->player.songDuration = app->playlist->length * 1000;
-		pthread_mutex_init (&app->player.pauseMutex, NULL);
-		pthread_cond_init (&app->player.pauseCond, NULL);
-		strcpy(app->player.fly.stationName, app->curStation->name);
-
-		/* Open the audio file. */
-		if(app->settings.record)
-			BarFlyOpen (&app->player.fly, app->playlist, &app->settings);
-
-		/* throw event */
-		BarUiStartEventCmd (&app->settings, "songstart",
-				app->curStation, app->playlist, &app->player, app->ph.stations,
-				PIANO_RET_OK, WAITRESS_RET_OK);
-
-		/* prevent race condition, mode must _not_ be FREED if
-		 * thread has been started */
-		app->player.mode = PLAYER_STARTING;
-		/* start player */
-		pthread_create (playerThread, NULL, BarPlayerThread,
-				&app->player);
+		return;
 	}
+
+	/* setup player */
+	memset (&app->player, 0, sizeof (app->player));
+	app->player.record = app->settings.record;
+
+	WaitressInit (&app->player.waith);
+	WaitressSetUrl (&app->player.waith, app->playlist->audioUrl);
+
+	/* set up global proxy, player is NULLed on songfinish */
+	if (app->settings.proxy != NULL) {
+		WaitressSetProxy (&app->player.waith, app->settings.proxy);
+	}
+
+	app->player.gain = app->playlist->fileGain;
+	app->player.scale = BarPlayerCalcScale (app->player.gain + app->settings.volume);
+	app->player.audioFormat = app->playlist->audioFormat;
+	app->player.settings = &app->settings;
+	app->player.songDuration = app->playlist->length * 1000;
+	pthread_mutex_init (&app->player.pauseMutex, NULL);
+	pthread_cond_init (&app->player.pauseCond, NULL);
+
+	/* set the real station name if QuickMix is set */
+
+	char *realStation = app->curStation->isQuickMix
+		? PianoFindStationById(app->ph.stations, app->playlist->stationId)->name
+		: app->curStation->name;
+
+	strcpy(app->player.fly.stationName, realStation);
+
+	/* Open the audio file. */
+	if(app->settings.record)
+		BarFlyOpen (&app->player.fly, app->playlist, &app->settings);
+
+	/* throw event */
+	BarUiStartEventCmd (&app->settings, "songstart",
+			app->curStation, app->playlist, &app->player, app->ph.stations,
+			PIANO_RET_OK, WAITRESS_RET_OK);
+
+	/* prevent race condition, mode must _not_ be FREED if
+		* thread has been started */
+	app->player.mode = PLAYER_STARTING;
+	/* start player */
+	pthread_create (playerThread, NULL, BarPlayerThread, &app->player);
 }
 
 /*	player is done, clean up

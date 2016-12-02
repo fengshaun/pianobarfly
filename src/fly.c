@@ -592,8 +592,7 @@ static FILE* _BarFlyFileOpenStream(char const* path, char const* mode)
 	 * with fopen().
 	 */
 	do {
-		fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
-				  S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+		fd = open(path, O_WRONLY | O_CREAT | O_EXCL, 0644);
 		if ((fd == -1) && (errno != EINTR)) {
 			goto error;
 		}
@@ -1133,9 +1132,7 @@ int BarFlyCopyCompleted(BarFly_t* fly, BarSettings_t const* settings)
 	/*
 	 * Open a stream to the file.
 	 */
-	int status = _BarFlyFileOpen(&fly->audio_file, fly->audio_file_path, settings);
-
-	if (status < 0) {
+	if (_BarFlyFileOpen(&fly->audio_file, fly->audio_file_path, settings) < 0) {
 		return -1;
 	}
 

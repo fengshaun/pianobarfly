@@ -554,7 +554,9 @@ static int _BarFlyFileOpen(FILE** file, char const* path,
 				"not be recorded (%s).\n", path);
 		exit_status = -2;
 		goto error;
-	} else if (tmp_file == NULL) {
+	}
+
+	if (tmp_file == NULL) {
 		BarUiMsg(settings, MSG_ERR, "Error opening the audio file for reading "
 				"(%s) (%d:%s).\n", path, errno, strerror(errno));
 		exit_status = -1;
@@ -590,8 +592,7 @@ static FILE* _BarFlyFileOpenStream(char const* path, char const* mode)
 	 * with fopen().
 	 */
 	do {
-		fd = open(path, O_WRONLY | O_CREAT | O_EXCL,
-				S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
+		fd = open(path, O_WRONLY | O_CREAT | O_EXCL);
 		if ((fd == -1) && (errno != EINTR)) {
 			goto error;
 		}

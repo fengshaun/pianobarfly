@@ -1497,34 +1497,34 @@ int BarFlyTag(BarFly_t* fly, BarSettings_t const* settings)
 
 int BarFlyWrite(BarFly_t* fly, void const* data, size_t data_size)
 {
-	int exit_status = 0;
-	size_t status;
+	if (data_size == 0) {
+		return 0;
+	}
 
-	assert(fly != NULL);
-	assert(data != NULL);
+	if (!data) {
+		return -1;
+	}
+
+	if (!fly) {
+		return -1;
+	}
+
+	if (!fly->temp_file) {
+		return -1;
+	}
+
+	if (fly->completed) {
+		return 0;
+	}
 
 	/*
 	 * Write the given data buffer to the audio file.
 	 */
-	if (!fly->completed) {
-		if (data_size == 0) {
-			goto end;
-		}
-
-		assert(fly->audio_file != NULL);
-		status = fwrite(data, data_size, 1, fly->temp_file);
-		if (status != 1) {
-			goto error;
-		}
+	if (fwrite(data, 1, data_size, fly->temp_file) != data_size) {
+		return -1;
 	}
 
-	goto end;
-
-error:
-	exit_status = -1;
-
-end:
-	return exit_status;
+	return 0;
 }
 
 // vim: set noexpandtab:

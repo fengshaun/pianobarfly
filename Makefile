@@ -9,7 +9,7 @@ DYNLINK:=0
 
 # Respect environment variables set by user; does not work with :=
 ifeq (${CFLAGS},)
-	CFLAGS=-O2 -DNDEBUG
+	CFLAGS=-g
 endif
 ifeq (${CC},cc)
 	OS := $(shell uname)

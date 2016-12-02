@@ -117,8 +117,7 @@ static inline int BarPlayerBufferFill (struct audioPlayer *player,
 
 	/* Write the stream to the output file. */
 	if(player->record) {
-		int status = BarFlyWrite(&player->fly, data, dataSize);
-		if (status != 0) {
+		if (BarFlyWrite(&player->fly, data, dataSize) != 0) {
 			BarUiMsg (player->settings, MSG_ERR, "Error writing audio file.\n");
 		}
 	}
@@ -523,8 +522,8 @@ void *BarPlayerThread (void *data) {
 
 	if (wRet == WAITRESS_RET_OK && player->settings->record) {
 		if (!player->settings->downloadOnlyLoved ||
-			(player->settings->downloadOnlyLoved && !player->fly.loved)) {
-			BarUiMsg(player->settings, MSG_INFO, "Saving loved song.\n",
+			(player->settings->downloadOnlyLoved && player->fly.loved)) {
+			BarUiMsg(player->settings, MSG_INFO, "Saving song.\n",
 					player->fly.audio_file_path);
 			BarFlyCopyCompleted(&player->fly, player->settings);
 		}

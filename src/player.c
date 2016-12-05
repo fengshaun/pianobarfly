@@ -524,12 +524,16 @@ void *BarPlayerThread (void *data) {
 		if (!player->settings->downloadOnlyLoved ||
 			(player->settings->downloadOnlyLoved && player->fly.loved)) {
 			BarUiMsg(player->settings, MSG_INFO, "Saving song.\n",
-					player->fly.audio_file_path);
-			BarFlyCopyCompleted(&player->fly, player->settings);
+					 player->fly.audio_file_path);
+			if (BarFlyCopyCompleted(&player->fly, player->settings) == 0) {
+				/* If the song was played all the way through tag it. */
+				BarFlyTag(&player->fly, player->settings);
+			} else {
+				BarUiMsg(player->settings, MSG_ERR, "Error while saving audio file\n",
+						 player->fly.audio_file_path);
+			}
 		}
 
-		/* If the song was played all the way through tag it. */
-		BarFlyTag(&player->fly, player->settings);
 	}
 
 	switch (player->audioFormat) {

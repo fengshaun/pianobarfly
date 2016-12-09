@@ -521,19 +521,17 @@ void *BarPlayerThread (void *data) {
 			|| wRet == WAITRESS_RET_READ_ERR);
 
 	if (wRet == WAITRESS_RET_OK && player->settings->record) {
-		if (!player->settings->downloadOnlyLoved ||
-			(player->settings->downloadOnlyLoved && player->fly.loved)) {
-			BarUiMsg(player->settings, MSG_INFO, "Saving song.\n",
-					 player->fly.audio_file_path);
-			if (BarFlyCopyCompleted(&player->fly, player->settings) == 0) {
-				/* If the song was played all the way through tag it. */
-				BarFlyTag(&player->fly, player->settings);
-			} else {
-				BarUiMsg(player->settings, MSG_ERR, "Error while saving audio file\n",
-						 player->fly.audio_file_path);
-			}
+		int e = BarFlyCopyCompleted(&player->fly, player->settings);
+		if (e == 0) {
+			/* If the song was played all the way through tag it. */
+			BarFlyTag(&player->fly, player->settings);
+			BarUiMsg(player->settings, MSG_INFO, "Song saved.\n");
+		} else if (e == -2) {
+			BarUiMsg(player->settings, MSG_INFO, "Audio file not saved: record cmd rejected\n");
+		} else {
+			BarUiMsg(player->settings, MSG_ERR, "Error while saving audio file\n",
+						player->fly.audio_file_path);
 		}
-
 	}
 
 	switch (player->audioFormat) {

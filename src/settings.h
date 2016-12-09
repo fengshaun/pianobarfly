@@ -101,6 +101,7 @@ typedef struct {
 	char *proxy;
 	char *autostartStation;
 	char *eventCmd;
+	char *recordCmd;
 	char *loveIcon;
 	char *banIcon;
 	char *atIcon;

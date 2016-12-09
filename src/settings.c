@@ -253,6 +253,8 @@ void BarSettingsRead (BarSettings_t *settings) {
 				settings->autostartStation = strdup (val);
 			} else if (streq ("event_command", key)) {
 				settings->eventCmd = strdup (val);
+			} else if (streq ("record_command", key)) {
+				settings->recordCmd = strdup (val);
 			} else if (streq ("history", key)) {
 				settings->history = atoi (val);
 			} else if (streq ("max_player_errors", key)) {

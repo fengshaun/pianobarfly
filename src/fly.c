@@ -1129,12 +1129,74 @@ int BarFlyCopyCompleted(BarFly_t* fly, BarSettings_t const* settings)
 		return -1;
 	}
 
+	if (settings->recordCmd != NULL) {
+		/* should we copy it? */
+		pid_t chld;
+		int pipeFd[2];
+
+		if (pipe (pipeFd) == -1) {
+			BarUiMsg (settings, MSG_ERR, "Cannot create recordcmd pipe. (%s)\n", strerror (errno));
+			return -1;
+		}
+
+		chld = fork ();
+		if (chld == 0) {
+			/* child */
+			close (pipeFd[1]);
+			dup2 (pipeFd[0], fileno (stdin));
+			execl (settings->recordCmd, settings->recordCmd, "record", (char *) NULL);
+			BarUiMsg (settings, MSG_ERR, "Cannot start recordcmd. (%s)\n", strerror (errno));
+			close (pipeFd[0]);
+			exit (1);
+		} else if (chld == -1) {
+			BarUiMsg (settings, MSG_ERR, "Cannot fork recordcmd. (%s)\n", strerror (errno));
+		} else {
+			/* parent */
+			PianoStation_t *songStation = NULL;
+
+			close (pipeFd[0]);
+
+			FILE *pipeWriteFd = fdopen (pipeFd[1], "w");
+
+			fprintf (pipeWriteFd,
+					"artist=%s\n"
+					"title=%s\n"
+					"album=%s\n"
+					"stationName=%s\n"
+					"rating=%i\n"
+					"audioFilePath=%s\n",
+					fly->artist,
+					fly->title,
+					fly->album,
+					fly->stationName,
+					fly->loved ? 1 : 0,
+					fly->audio_file_path
+					);
+
+			/* closes pipeFd[1] as well */
+			fclose (pipeWriteFd);
+
+			/* wait to get rid of the zombie */
+			int status;
+			if (waitpid (chld, &status, 0) == chld) {
+				if (status != 0) {
+					return -2;
+				}
+			}
+		}
+	}
+
+	/***/
+
 	/*
 	 * Open a stream to the file.
 	 */
 	if (_BarFlyFileOpen(&fly->audio_file, fly->audio_file_path, settings) < 0) {
+		BarUiMsg (settings, MSG_ERR, "Cannot open audio file for writing. (%d %s)\n",
+				  errno, strerror (errno));
 		return -1;
 	}
+
 
 	fly->status = COPYING;
 	fseek(fly->temp_file, 0, SEEK_SET);
